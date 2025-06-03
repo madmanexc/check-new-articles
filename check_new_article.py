@@ -27,11 +27,18 @@ def load_last_ids():
         with open("latest.txt", "r", encoding="utf-8") as f:
             return set(line.strip() for line in f.readlines())
     except FileNotFoundError:
+        print("📁 Файл latest.txt не найден — создаётся при первом запуске")
         return set()
 
 def save_ids(ids):
-    with open("latest.txt", "w", encoding="utf-8") as f:
-        f.write("\n".join(ids))
+    print("💾 Сохраняю ссылки:", ids)
+    try:
+        with open("latest.txt", "w", encoding="utf-8") as f:
+            for link in ids:
+                f.write(link + "\n")
+        print("✅ Ссылки успешно сохранены в latest.txt")
+    except Exception as e:
+        print(f"❌ Ошибка при сохранении latest.txt: {e}")
 
 def run():
     previous_ids = load_last_ids()
@@ -73,9 +80,11 @@ def run():
     if new_articles:
         for title, link in new_articles:
             send_telegram(f"🆕 <b>{title}</b>\n{link}")
-        save_ids(current_ids)
     else:
         print("✅ Новых статей нет")
+
+    # Всегда сохраняем current_ids (даже если нет новых)
+    save_ids(current_ids)
 
 if __name__ == "__main__":
     run()
