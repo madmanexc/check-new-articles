@@ -28,3 +28,10 @@ jobs:
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
+      - name: Commit latest.txt to repository
+        run: |
+          git config --global user.name "autoupdater"
+          git config --global user.email "bot@localhost"
+          git add latest.txt
+          git commit -m "update latest.txt" || echo "No changes"
+          git push
