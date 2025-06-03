@@ -47,8 +47,8 @@ def run():
             print(f"🌐 Открываю {name}: {url}")
             try:
                 page.goto(url, timeout=20000)
-                page.wait_for_selector("ul.article-list", timeout=15000)
-                link = page.query_selector("ul.article-list li.article-list-item a.article-list-link")
+                page.wait_for_selector("a.article-list-link", timeout=20000)
+                link = page.query_selector("a.article-list-link")
                 if link:
                     title = link.inner_text().strip()
                     href = BASE_URL + link.get_attribute("href")
