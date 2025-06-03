@@ -64,10 +64,4 @@ def run():
         browser.close()
 
     if new_articles:
-        for title, link in new_articles:
-            send_telegram(f"🆕 <b>{title}</b>\n{link}")
-        save_ids(current_ids)
-    else:
-        print("✅ Новых статей нет")
-
-if __name__ == "__
+        for title, link in new_artic_
