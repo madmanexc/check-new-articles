@@ -1,0 +1,28 @@
+name: Проверка сайта
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  check-for-update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Клонирование репозитория
+        uses: actions/checkout@v4
+
+      - name: Установка Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: Установка зависимостей
+        run: pip install requests beautifulsoup4
+
+      - name: Запуск скрипта
+        run: python check_new_article.py
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
