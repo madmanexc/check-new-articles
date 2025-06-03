@@ -39,13 +39,16 @@ def run():
     new_articles = []
 
     with sync_playwright() as p:
-    browser = p.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
-    context = browser.new_context(
-        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-        viewport={"width": 1280, "height": 800},
-        java_script_enabled=True
-    )
-    page = context.new_page()
+        browser = p.chromium.launch(
+            headless=True,
+            args=["--disable-blink-features=AutomationControlled"]
+        )
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+            viewport={"width": 1280, "height": 800},
+            java_script_enabled=True
+        )
+        page = context.new_page()
 
         for name, url in SECTIONS.items():
             print(f"🌐 Открываю {name}: {url}")
