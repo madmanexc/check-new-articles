@@ -1,16 +1,16 @@
-name: Проверка сайта
+name: Проверка сайта через Playwright
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 jobs:
-  check-for-update:
+  check:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Клонирование репозитория
+      - name: Клонирование
         uses: actions/checkout@v4
 
       - name: Установка Python
@@ -19,7 +19,9 @@ jobs:
           python-version: 3.11
 
       - name: Установка зависимостей
-        run: pip install requests beautifulsoup4
+        run: |
+          pip install playwright requests
+          playwright install chromium
 
       - name: Запуск скрипта
         run: python check_new_article.py
