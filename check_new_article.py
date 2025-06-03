@@ -1,17 +1,17 @@
-import requests
-from bs4 import BeautifulSoup
 import os
+from playwright.sync_api import sync_playwright
 
-BASE_URL = "https://feedback.minecraft.net"
+BOT_TOKEN = os.environ["BOT_TOKEN"]
+CHAT_ID = os.environ["CHAT_ID"]
+
 SECTIONS = {
     "release": "https://feedback.minecraft.net/hc/en-us/sections/360001186971-Release-Changelogs",
     "preview": "https://feedback.minecraft.net/hc/en-us/sections/360001185332-Beta-and-Preview-Information-and-Changelogs",
 }
-
-CHAT_ID = os.environ["CHAT_ID"]
-BOT_TOKEN = os.environ["BOT_TOKEN"]
+BASE_URL = "https://feedback.minecraft.net"
 
 def send_telegram(message):
+    import requests
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     data = {
         "chat_id": CHAT_ID,
@@ -20,29 +20,7 @@ def send_telegram(message):
     }
     r = requests.post(url, data=data)
     if r.status_code != 200:
-        print("❌ Ошибка при отправке в Telegram:", r.text)
-
-def get_latest_article(section_key, url):
-    print(f"🔍 Проверка раздела {section_key}: {url}")
-    try:
-        html = requests.get(url, timeout=15).text
-    except Exception as e:
-        print(f"❌ Ошибка при загрузке: {e}")
-        return None
-    
-    # Сохраняем HTML-ответ для отладки
-    with open(f"debug_{section_key}.html", "w", encoding="utf-8") as f:
-        f.write(html)
-
-    soup = BeautifulSoup(html, "html.parser")
-    first_item = soup.select_one("ul.article-list li.article-list-item a.article-list-link")
-    if not first_item:
-        print(f"❌ Не удалось найти статью в разделе {section_key}")
-        return None
-    title = first_item.get_text(strip=True)
-    link = BASE_URL + first_item["href"]
-    print(f"✅ Найдена статья: {title} → {link}")
-    return title, link
+        print("❌ Ошибка Telegram:", r.text)
 
 def load_last_ids():
     try:
@@ -55,22 +33,41 @@ def save_ids(ids):
     with open("latest.txt", "w", encoding="utf-8") as f:
         f.write("\n".join(ids))
 
-# Основная логика
-previous_ids = load_last_ids()
-current_ids = set()
-new_articles = []
+def run():
+    previous_ids = load_last_ids()
+    current_ids = set()
+    new_articles = []
 
-for key, section_url in SECTIONS.items():
-    result = get_latest_article(key, section_url)
-    if result:
-        title, link = result
-        current_ids.add(link)
-        if link not in previous_ids:
-            new_articles.append((title, link))
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
+        page = context.new_page()
 
-if new_articles:
-    for title, link in new_articles:
-        send_telegram(f"🆕 <b>{title}</b>\n{link}")
-    save_ids(current_ids)
-else:
-    print("✅ Новых статей нет")
+        for name, url in SECTIONS.items():
+            print(f"🌐 Открываю {name}: {url}")
+            try:
+                page.goto(url, timeout=20000)
+                page.wait_for_selector("ul.article-list", timeout=15000)
+                link = page.query_selector("ul.article-list li.article-list-item a.article-list-link")
+                if link:
+                    title = link.inner_text().strip()
+                    href = BASE_URL + link.get_attribute("href")
+                    print(f"✅ Найдена статья: {title}")
+                    current_ids.add(href)
+                    if href not in previous_ids:
+                        new_articles.append((title, href))
+                else:
+                    print(f"❌ Не найден элемент a.article-list-link в разделе {name}")
+            except Exception as e:
+                print(f"❌ Ошибка при загрузке {name}: {e}")
+
+        browser.close()
+
+    if new_articles:
+        for title, link in new_articles:
+            send_telegram(f"🆕 <b>{title}</b>\n{link}")
+        save_ids(current_ids)
+    else:
+        print("✅ Новых статей нет")
+
+if __name__ == "__
